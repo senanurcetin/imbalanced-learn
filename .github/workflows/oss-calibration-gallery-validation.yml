@@ -1,0 +1,59 @@
+name: Fork Sampling Calibration QA
+
+on:
+  push:
+    branches:
+      - qa/sampling-calibration-gallery-1101
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  calibration-gallery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install pytest 'ruff==0.14.2' sphinx sphinx-gallery matplotlib
+      - name: Run standalone example and Ruff
+        run: |
+          MPLBACKEND=Agg python examples/over-sampling/plot_probability_calibration.py
+          python -m ruff check examples/over-sampling/plot_probability_calibration.py
+          python -m ruff format --check examples/over-sampling/plot_probability_calibration.py
+      - name: Build single-example Sphinx Gallery
+        env:
+          MPLBACKEND: Agg
+        run: |
+          mkdir -p /tmp/oss-gallery/examples
+          cp examples/over-sampling/plot_probability_calibration.py /tmp/oss-gallery/examples/
+          printf 'Example gallery\n===============\n' >/tmp/oss-gallery/examples/README.txt
+          cat >/tmp/oss-gallery/conf.py <<'PY'
+          project = 'OSS Calibration QA'
+          extensions = ['sphinx_gallery.gen_gallery']
+          sphinx_gallery_conf = {
+              'examples_dirs': 'examples',
+              'gallery_dirs': 'auto_examples',
+              'filename_pattern': r'plot_probability_calibration\.py',
+              'plot_gallery': True,
+              'run_stale_examples': True,
+          }
+          PY
+          cat >/tmp/oss-gallery/index.rst <<'RST'
+          Sampling Calibration Gallery
+          ============================
+
+          .. toctree::
+             :maxdepth: 2
+
+             auto_examples/index
+          RST
+          python -m sphinx -b html -W --keep-going /tmp/oss-gallery /tmp/oss-gallery-html
