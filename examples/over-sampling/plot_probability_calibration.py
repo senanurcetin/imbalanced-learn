@@ -1,7 +1,7 @@
 """
-===========================================
+=============================================
 Compare ranking and calibration with sampling
-===========================================
+=============================================
 
 Resampling is not automatically an improvement in discrimination or probability
 calibration. Compare a baseline classifier against class weighting and SMOTE on
@@ -64,9 +64,7 @@ for name, model in models.items():
         f"{name}: ROC-AUC={roc_auc_score(y_test, proba):.3f}, "
         f"Brier={brier_score_loss(y_test, proba):.3f}"
     )
-    CalibrationDisplay.from_predictions(
-        y_test, proba, n_bins=10, name=name, ax=ax
-    )
+    CalibrationDisplay.from_predictions(y_test, proba, n_bins=10, name=name, ax=ax)
 
 ax.set_title("Calibration on the unchanged test distribution")
 fig.tight_layout()
